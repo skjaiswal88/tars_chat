@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
+import { useAuth } from "@clerk/nextjs";
 import Sidebar from "@/components/Sidebar";
 
 export default function RootLayout({
@@ -10,10 +11,13 @@ export default function RootLayout({
 }: {
     children: React.ReactNode;
 }) {
+    const { isSignedIn } = useAuth();
     const store = useMutation(api.users.store);
     const setOnline = useMutation(api.users.setOnlineStatus);
 
     useEffect(() => {
+        if (!isSignedIn) return;
+
         // Sync user to Convex on mount
         store().catch(console.error);
         setOnline({ isOnline: true }).catch(console.error);
@@ -33,7 +37,7 @@ export default function RootLayout({
             document.removeEventListener("visibilitychange", handleVisibilityChange);
             window.removeEventListener("beforeunload", handleBeforeUnload);
         };
-    }, [store, setOnline]);
+    }, [isSignedIn, store, setOnline]);
 
     return (
         <div className="flex h-screen overflow-hidden bg-[#0a0a12]">
