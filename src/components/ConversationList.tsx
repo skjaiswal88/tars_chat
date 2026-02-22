@@ -1,11 +1,11 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
+import { api } from "@convex/_generated/api";
 import { useParams, useRouter } from "next/navigation";
 import { MessageSquare } from "lucide-react";
 import { formatDistanceToNow, format, isToday, isThisYear } from "date-fns";
-import { Id } from "../../convex/_generated/dataModel";
+import { Id } from "@convex/_generated/dataModel";
 import { useUser } from "@clerk/nextjs";
 
 function formatLastMessageTime(timestamp: number): string {
@@ -81,8 +81,8 @@ export default function ConversationList() {
                         key={conv._id}
                         onClick={() => router.push(`/conversations/${conv._id}`)}
                         className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left group ${isActive
-                                ? "bg-violet-600/20 border border-violet-500/30"
-                                : "hover:bg-white/5 border border-transparent"
+                            ? "bg-violet-600/20 border border-violet-500/30"
+                            : "hover:bg-white/5 border border-transparent"
                             }`}
                     >
                         {/* Avatar */}

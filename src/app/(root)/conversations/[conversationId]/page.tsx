@@ -1,8 +1,8 @@
 "use client";
 
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../../convex/_generated/api";
-import { Id } from "../../../../convex/_generated/dataModel";
+import { api } from "@convex/_generated/api";
+import { Id } from "@convex/_generated/dataModel";
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { format, isToday, isThisYear } from "date-fns";
@@ -229,10 +229,10 @@ export default function ConversationPage() {
                                     {/* Bubble */}
                                     <div
                                         className={`relative px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${msg.isDeleted
-                                                ? "bg-white/5 text-zinc-500 italic border border-white/8"
-                                                : isMine
-                                                    ? "bg-violet-600 text-white rounded-br-md"
-                                                    : "bg-[#1a1a2e] text-white rounded-bl-md"
+                                            ? "bg-white/5 text-zinc-500 italic border border-white/8"
+                                            : isMine
+                                                ? "bg-violet-600 text-white rounded-br-md"
+                                                : "bg-[#1a1a2e] text-white rounded-bl-md"
                                             }`}
                                     >
                                         <p>{msg.isDeleted ? "This message was deleted" : msg.content}</p>

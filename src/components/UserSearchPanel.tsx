@@ -1,11 +1,11 @@
 "use client";
 
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../../convex/_generated/api";
+import { api } from "@convex/_generated/api";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, Users } from "lucide-react";
-import { Id } from "../../convex/_generated/dataModel";
+import { Id } from "@convex/_generated/dataModel";
 
 export default function UserSearchPanel({ onClose }: { onClose: () => void }) {
     const [query, setQuery] = useState("");

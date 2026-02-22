@@ -1,8 +1,8 @@
 "use client";
 
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../../convex/_generated/api";
-import { Id } from "../../../../convex/_generated/dataModel";
+import { api } from "@convex/_generated/api";
+import { Id } from "@convex/_generated/dataModel";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Users, Check, X } from "lucide-react";
@@ -110,8 +110,8 @@ export default function NewGroupPage() {
                             </div>
                             <div
                                 className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${selectedIds.has(user._id)
-                                        ? "bg-violet-600 border-violet-600"
-                                        : "border-white/20"
+                                    ? "bg-violet-600 border-violet-600"
+                                    : "border-white/20"
                                     }`}
                             >
                                 {selectedIds.has(user._id) && (
