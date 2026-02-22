@@ -25,7 +25,7 @@ export default function NewGroupPage() {
     };
 
     const handleCreate = async () => {
-        if (!groupName.trim() || selectedIds.size < 2) return;
+        if (!groupName.trim() || selectedIds.size < 1) return;
         setIsCreating(true);
         try {
             const convId = await createGroup({
@@ -52,7 +52,7 @@ export default function NewGroupPage() {
                 </button>
                 <div>
                     <p className="text-sm font-semibold text-white">New Group Chat</p>
-                    <p className="text-xs text-zinc-500">Select at least 2 people</p>
+                    <p className="text-xs text-zinc-500">Select at least 1 person</p>
                 </div>
             </div>
 
@@ -127,16 +127,16 @@ export default function NewGroupPage() {
             <div className="px-4 py-3 border-t border-white/8 bg-[#0d0d1a]">
                 <button
                     onClick={handleCreate}
-                    disabled={!groupName.trim() || selectedIds.size < 2 || isCreating}
+                    disabled={!groupName.trim() || selectedIds.size < 1 || isCreating}
                     className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-sm transition"
                 >
                     {isCreating
                         ? "Creating..."
                         : `Create Group${selectedIds.size > 0 ? ` · ${selectedIds.size} selected` : ""}`}
                 </button>
-                {selectedIds.size > 0 && selectedIds.size < 2 && (
+                {selectedIds.size === 0 && (
                     <p className="text-xs text-zinc-500 text-center mt-2">
-                        Select at least 2 people to create a group
+                        Select at least 1 person to create a group
                     </p>
                 )}
             </div>

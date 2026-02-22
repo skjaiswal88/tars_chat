@@ -50,6 +50,14 @@ export default function ConversationPage() {
 
     const currentConv = conversations?.find((c) => c._id === convId);
 
+    // Close reaction menu on outside click
+    useEffect(() => {
+        if (!reactionMenuMsgId) return;
+        const close = () => setReactionMenuMsgId(null);
+        document.addEventListener("click", close);
+        return () => document.removeEventListener("click", close);
+    }, [reactionMenuMsgId]);
+
     // Mark read on open
     useEffect(() => {
         markRead({ conversationId: convId }).catch(console.error);
