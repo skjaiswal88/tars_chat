@@ -1,4 +1,5 @@
 import { SignUp } from "@clerk/nextjs";
+import { dark } from "@clerk/themes";
 
 export default function SignUpPage() {
     return (
@@ -14,7 +15,19 @@ export default function SignUpPage() {
                 </div>
                 <p className="text-zinc-400 text-sm">Real-time messaging, beautifully simple</p>
             </div>
-            <SignUp />
+            <SignUp
+                appearance={{
+                    baseTheme: dark,
+                    variables: {
+                        colorPrimary: "#7c3aed",
+                        colorBackground: "#0f0f15",
+                        colorInputBackground: "#1a1a2e",
+                        colorText: "#e4e4f0",
+                        colorTextSecondary: "#a1a1b5",
+                        colorNeutral: "#ffffff",
+                    },
+                }}
+            />
         </div>
     );
 }
