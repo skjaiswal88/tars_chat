@@ -12,7 +12,6 @@ export function ConvexClientProvider({ children }: { children: ReactNode }) {
         <ClerkProvider
             publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!}
             appearance={{
-                baseTheme: undefined,
                 variables: {
                     colorPrimary: "#7c3aed",
                     colorBackground: "#0f0f15",
