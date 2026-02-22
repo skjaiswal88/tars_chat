@@ -7,7 +7,7 @@ import { useUser } from "@clerk/nextjs";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { format, isToday, isThisYear } from "date-fns";
 import { ArrowDown, ArrowLeft, Send, Trash2, Smile } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 
 const EMOJIS = ["👍", "❤️", "😂", "😮", "😢"];
 
@@ -18,21 +18,14 @@ function formatMessageTime(timestamp: number): string {
     return format(date, "MMM d yyyy, h:mm a");
 }
 
-export default function ConversationPage({
-    params,
-}: {
-    params: { conversationId: string };
-}) {
-    const { conversationId } = params;
+export default function ConversationPage() {
+    const params = useParams();
+    const conversationId = params.conversationId as string;
     const convId = conversationId as Id<"conversations">;
     const { user } = useUser();
 
-    const messages = useQuery(api.messages.getMessages, {
-        conversationId: convId,
-    });
-    const typingUsers = useQuery(api.typing.getTypingUsers, {
-        conversationId: convId,
-    });
+    const messages = useQuery(api.messages.getMessages, { conversationId: convId });
+    const typingUsers = useQuery(api.typing.getTypingUsers, { conversationId: convId });
     const conversations = useQuery(api.conversations.getMyConversations);
     const me = useQuery(api.users.getMe);
 
@@ -115,7 +108,8 @@ export default function ConversationPage({
             });
             setContent("");
             if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-        } catch (e: any) {
+            setTyping({ conversationId: convId, isTyping: false }).catch(console.error);
+        } catch {
             setSendError("Failed to send. Click to retry.");
         } finally {
             setIsSending(false);
@@ -131,9 +125,7 @@ export default function ConversationPage({
 
     // Get other members for header
     const otherMembers =
-        (currentConv?.members as any[])?.filter(
-            (m: any) => m?.clerkId !== user?.id
-        ) ?? [];
+        (currentConv?.members as any[])?.filter((m: any) => m?.clerkId !== user?.id) ?? [];
     const headerName = currentConv?.isGroup
         ? currentConv.groupName
         : otherMembers[0]?.name ?? "Conversation";
@@ -141,7 +133,7 @@ export default function ConversationPage({
     const isOtherOnline = !currentConv?.isGroup && otherMembers[0]?.isOnline;
 
     return (
-        <div className="flex flex-col h-full bg-[#070710]">
+        <div className="flex flex-col h-full bg-[#070710] relative">
             {/* Header */}
             <div className="flex items-center gap-3 px-4 py-3 border-b border-white/8 bg-[#0d0d1a]">
                 <button
@@ -169,7 +161,11 @@ export default function ConversationPage({
                 <div>
                     <p className="text-sm font-semibold text-white">{headerName}</p>
                     <p className={`text-xs ${isOtherOnline ? "text-green-400" : "text-zinc-500"}`}>
-                        {isOtherOnline ? "Online" : "Offline"}
+                        {currentConv?.isGroup
+                            ? `${(currentConv?.members as any[])?.length ?? 0} members`
+                            : isOtherOnline
+                                ? "Online"
+                                : "Offline"}
                     </p>
                 </div>
             </div>
@@ -183,14 +179,8 @@ export default function ConversationPage({
                 {messages === undefined ? (
                     <div className="flex flex-col gap-3">
                         {[...Array(6)].map((_, i) => (
-                            <div
-                                key={i}
-                                className={`flex ${i % 2 === 0 ? "justify-start" : "justify-end"}`}
-                            >
-                                <div
-                                    className={`rounded-2xl animate-pulse bg-white/8 h-10 ${i % 2 === 0 ? "w-48" : "w-36"
-                                        }`}
-                                />
+                            <div key={i} className={`flex ${i % 2 === 0 ? "justify-start" : "justify-end"}`}>
+                                <div className={`rounded-2xl animate-pulse bg-white/8 h-10 ${i % 2 === 0 ? "w-48" : "w-36"}`} />
                             </div>
                         ))}
                     </div>
@@ -298,10 +288,13 @@ export default function ConversationPage({
                                     {msg.reactions && msg.reactions.length > 0 && (
                                         <div className="flex flex-wrap gap-1 mt-1">
                                             {Object.entries(
-                                                msg.reactions.reduce((acc: Record<string, number>, r: any) => {
-                                                    acc[r.emoji] = (acc[r.emoji] ?? 0) + 1;
-                                                    return acc;
-                                                }, {})
+                                                msg.reactions.reduce(
+                                                    (acc: Record<string, number>, r: any) => {
+                                                        acc[r.emoji] = (acc[r.emoji] ?? 0) + 1;
+                                                        return acc;
+                                                    },
+                                                    {}
+                                                )
                                             ).map(([emoji, count]) => (
                                                 <button
                                                     key={emoji}
