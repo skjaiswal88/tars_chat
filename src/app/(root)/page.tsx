@@ -2,7 +2,7 @@ import { MessageSquare } from "lucide-react";
 
 export default function HomePage() {
     return (
-        <div className="flex flex-1 flex-col items-center justify-center text-center px-8 bg-[#070710] h-full">
+        <div className="flex flex-1 flex-col items-center justify-center text-center px-8 bg-[var(--bg-app)] h-full">
             <div className="mb-6 p-6 rounded-2xl bg-white/5 border border-white/10">
                 <MessageSquare className="w-16 h-16 text-violet-400 mx-auto" />
             </div>

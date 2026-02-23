@@ -44,7 +44,7 @@ export default function RootLayout({
     }, [isSignedIn, store, setOnline]);
 
     return (
-        <div className="flex h-screen overflow-hidden bg-[#0a0a12]">
+        <div className="flex h-screen overflow-hidden bg-[var(--bg-app)]">
             {/* Sidebar: always visible on desktop; hidden on mobile when in a chat */}
             <div className={`${isChatPage ? "hidden md:block" : "block"} w-full md:w-80 flex-shrink-0`}>
                 <Sidebar />

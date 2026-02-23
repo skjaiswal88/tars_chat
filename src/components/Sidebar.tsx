@@ -7,16 +7,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ConversationList from "./ConversationList";
 import UserSearchPanel from "./UserSearchPanel";
-import { Users, MessageSquare, Search, X } from "lucide-react";
+import { Users, MessageSquare, Search, X, Sun, Moon } from "lucide-react";
 import Link from "next/link";
+import { useTheme } from "@/hooks/useTheme";
 
 export default function Sidebar() {
     const [showSearch, setShowSearch] = useState(false);
     const me = useQuery(api.users.getMe);
     const { user } = useUser();
+    const { theme, toggleTheme } = useTheme();
 
     return (
-        <div className="w-full md:w-80 flex-shrink-0 flex flex-col border-r border-white/8 bg-[#0d0d1a] h-full">
+        <div className="w-full md:w-80 flex-shrink-0 flex flex-col border-r border-white/8 bg-[var(--bg-panel)] h-full">
             {/* Header */}
             <div className="px-4 py-4 border-b border-white/8">
                 <div className="flex items-center justify-between">
@@ -27,6 +29,19 @@ export default function Sidebar() {
                         <span className="font-bold text-white text-lg tracking-tight">TarsChat</span>
                     </div>
                     <div className="flex items-center gap-1">
+                        {/* Theme toggle */}
+                        <button
+                            onClick={toggleTheme}
+                            className="p-2 rounded-lg hover:bg-white/8 transition-colors text-zinc-400 hover:text-white"
+                            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                        >
+                            {theme === "dark" ? (
+                                <Sun className="w-4 h-4" />
+                            ) : (
+                                <Moon className="w-4 h-4" />
+                            )}
+                        </button>
+                        {/* New Group */}
                         <Link
                             href="/conversations/new-group"
                             className="p-2 rounded-lg hover:bg-white/8 transition-colors text-zinc-400 hover:text-white"

@@ -46,6 +46,7 @@
     border-color: hsl(var(--border));
     box-sizing: border-box;
   }
+
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
@@ -53,6 +54,7 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
   }
+
   html,
   body,
   #__next {
@@ -64,15 +66,101 @@
 ::-webkit-scrollbar {
   width: 4px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: hsl(var(--border));
   border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground));
+}
+
+/* ======================
+   Theme CSS Variables
+   ====================== */
+:root {
+  --bg-app: #070710;
+  --bg-panel: #0d0d1a;
+  --bg-msg-other: #1a1a2e;
+}
+
+:root.light {
+  --bg-app: #f4f4fc;
+  --bg-panel: #ffffff;
+  --bg-msg-other: #eeeef8;
+}
+
+/* Light mode — text overrides */
+:root.light .text-white {
+  color: #0d0d1a;
+}
+
+:root.light .text-zinc-300 {
+  color: #3f3f46;
+}
+
+:root.light .text-zinc-400 {
+  color: #52525b;
+}
+
+:root.light .text-zinc-500 {
+  color: #71717a;
+}
+
+:root.light .text-zinc-600 {
+  color: #a1a1aa;
+}
+
+:root.light .text-violet-300 {
+  color: #7c3aed;
+}
+
+:root.light .placeholder\:text-zinc-500::placeholder {
+  color: #9ca3af;
+}
+
+/* Light mode — background overrides */
+:root.light .bg-white\/5 {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+:root.light .bg-white\/6 {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+:root.light .bg-white\/8 {
+  background-color: rgba(0, 0, 0, 0.06);
+}
+
+:root.light .bg-white\/10 {
+  background-color: rgba(0, 0, 0, 0.07);
+}
+
+:root.light .bg-white\/15 {
+  background-color: rgba(0, 0, 0, 0.10);
+}
+
+/* Light mode — border overrides */
+:root.light .border-white\/8 {
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+:root.light .border-white\/10 {
+  border-color: rgba(0, 0, 0, 0.10);
+}
+
+:root.light .border-white\/20 {
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+/* Light mode — conversation active state */
+:root.light .bg-violet-600\/20 {
+  background-color: rgba(124, 58, 237, 0.08);
 }
 
 /* Custom animations */
@@ -81,6 +169,7 @@
     opacity: 0;
     transform: translateY(8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -88,10 +177,13 @@
 }
 
 @keyframes pulse-dot {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
     opacity: 1;
   }
+
   50% {
     transform: scale(1.4);
     opacity: 0.5;
@@ -105,9 +197,11 @@
 .typing-dot {
   animation: pulse-dot 1.2s ease-in-out infinite;
 }
+
 .typing-dot:nth-child(2) {
   animation-delay: 0.2s;
 }
+
 .typing-dot:nth-child(3) {
   animation-delay: 0.4s;
 }

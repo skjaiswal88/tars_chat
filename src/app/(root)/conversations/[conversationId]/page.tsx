@@ -27,7 +27,6 @@ export default function ConversationPage() {
     const messages = useQuery(api.messages.getMessages, { conversationId: convId });
     const typingUsers = useQuery(api.typing.getTypingUsers, { conversationId: convId });
     const conversations = useQuery(api.conversations.getMyConversations);
-    const me = useQuery(api.users.getMe);
 
     const sendMessage = useMutation(api.messages.sendMessage);
     const markRead = useMutation(api.conversations.markRead);
@@ -45,10 +44,22 @@ export default function ConversationPage() {
     const bottomRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    // Ref mirrors state so scroll effect never has stale closure
+    const isAtBottomRef = useRef(true);
     const prevMsgCountRef = useRef(0);
+    const isInitialLoad = useRef(true);
     const router = useRouter();
 
     const currentConv = conversations?.find((c) => c._id === convId);
+
+    // Reset on conversation change
+    useEffect(() => {
+        isInitialLoad.current = true;
+        prevMsgCountRef.current = 0;
+        setNewMsgCount(0);
+        setIsAtBottom(true);
+        isAtBottomRef.current = true;
+    }, [convId]);
 
     // Close reaction menu on outside click
     useEffect(() => {
@@ -63,24 +74,45 @@ export default function ConversationPage() {
         markRead({ conversationId: convId }).catch(console.error);
     }, [convId, markRead]);
 
-    // Auto-scroll logic
+    // ─── Auto-scroll (reliable) ────────────────────────────────────────────────
     useEffect(() => {
         if (messages === undefined) return;
-        const msgCount = messages.length;
-        if (isAtBottom) {
-            bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-            setNewMsgCount(0);
-            markRead({ conversationId: convId }).catch(console.error);
-        } else if (msgCount > prevMsgCountRef.current) {
-            setNewMsgCount((n) => n + (msgCount - prevMsgCountRef.current));
-        }
-        prevMsgCountRef.current = msgCount;
-    }, [messages, isAtBottom, convId, markRead]);
+        const count = messages.length;
 
+        if (isInitialLoad.current && count > 0) {
+            // First load: instantly jump to bottom once DOM paints
+            requestAnimationFrame(() => {
+                const el = scrollContainerRef.current;
+                if (el) el.scrollTop = el.scrollHeight;
+            });
+            prevMsgCountRef.current = count;
+            isInitialLoad.current = false;
+            return;
+        }
+
+        if (count > prevMsgCountRef.current) {
+            if (isAtBottomRef.current) {
+                // User is at bottom → smooth scroll + mark read
+                requestAnimationFrame(() => {
+                    const el = scrollContainerRef.current;
+                    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+                });
+                setNewMsgCount(0);
+                markRead({ conversationId: convId }).catch(console.error);
+            } else {
+                // User scrolled up → show badge
+                setNewMsgCount((n) => n + (count - prevMsgCountRef.current));
+            }
+            prevMsgCountRef.current = count;
+        }
+    }, [messages, convId, markRead]);
+
+    // ─── Scroll handler ────────────────────────────────────────────────────────
     const handleScroll = useCallback(() => {
         const el = scrollContainerRef.current;
         if (!el) return;
-        const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+        const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 100;
+        isAtBottomRef.current = atBottom; // update ref immediately (no re-render lag)
         setIsAtBottom(atBottom);
         if (atBottom) {
             setNewMsgCount(0);
@@ -89,11 +121,14 @@ export default function ConversationPage() {
     }, [convId, markRead]);
 
     const scrollToBottom = () => {
-        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+        const el = scrollContainerRef.current;
+        if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+        isAtBottomRef.current = true;
         setIsAtBottom(true);
         setNewMsgCount(0);
     };
 
+    // ─── Typing ────────────────────────────────────────────────────────────────
     const handleTyping = (val: string) => {
         setContent(val);
         setTyping({ conversationId: convId, isTyping: val.length > 0 }).catch(console.error);
@@ -103,17 +138,14 @@ export default function ConversationPage() {
         }, 2000);
     };
 
+    // ─── Send ──────────────────────────────────────────────────────────────────
     const handleSend = async () => {
         const trimmed = content.trim();
         if (!trimmed || isSending) return;
         setIsSending(true);
         setSendError(null);
         try {
-            await sendMessage({
-                conversationId: convId,
-                content: trimmed,
-                messageType: "text",
-            });
+            await sendMessage({ conversationId: convId, content: trimmed, messageType: "text" });
             setContent("");
             if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
             setTyping({ conversationId: convId, isTyping: false }).catch(console.error);
@@ -131,7 +163,7 @@ export default function ConversationPage() {
         }
     };
 
-    // Get other members for header
+    // ─── Header info ───────────────────────────────────────────────────────────
     const otherMembers =
         (currentConv?.members as any[])?.filter((m: any) => m?.clerkId !== user?.id) ?? [];
     const headerName = currentConv?.isGroup
@@ -140,10 +172,11 @@ export default function ConversationPage() {
     const headerImage = !currentConv?.isGroup && otherMembers[0]?.imageUrl;
     const isOtherOnline = !currentConv?.isGroup && otherMembers[0]?.isOnline;
 
+    // ─── Render ────────────────────────────────────────────────────────────────
     return (
-        <div className="flex flex-col h-full bg-[#070710] relative">
+        <div className="flex flex-col h-full bg-[var(--bg-app)] relative">
             {/* Header */}
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-white/8 bg-[#0d0d1a]">
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-white/8 bg-[var(--bg-panel)]">
                 <button
                     onClick={() => router.back()}
                     className="md:hidden p-1.5 rounded-lg hover:bg-white/8 text-zinc-400 hover:text-white"
@@ -152,18 +185,14 @@ export default function ConversationPage() {
                 </button>
                 <div className="relative flex-shrink-0">
                     {headerImage ? (
-                        <img
-                            src={headerImage}
-                            alt={headerName ?? ""}
-                            className="w-9 h-9 rounded-full object-cover"
-                        />
+                        <img src={headerImage} alt={headerName ?? ""} className="w-9 h-9 rounded-full object-cover" />
                     ) : (
                         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center text-sm font-bold text-white">
                             {(headerName ?? "?")[0]?.toUpperCase()}
                         </div>
                     )}
                     {isOtherOnline && (
-                        <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[#0d0d1a]" />
+                        <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[var(--bg-panel)]" />
                     )}
                 </div>
                 <div>
@@ -212,16 +241,11 @@ export default function ConversationPage() {
                                 key={msg._id}
                                 className={`flex animate-fade-up ${isMine ? "justify-end" : "justify-start"} ${showAvatar ? "mt-3" : "mt-0.5"}`}
                             >
-                                {/* Other user avatar */}
                                 {!isMine && (
                                     <div className="flex-shrink-0 mr-2 self-end">
                                         {showAvatar ? (
                                             msg.sender?.imageUrl ? (
-                                                <img
-                                                    src={msg.sender.imageUrl}
-                                                    alt={msg.sender.name}
-                                                    className="w-7 h-7 rounded-full object-cover"
-                                                />
+                                                <img src={msg.sender.imageUrl} alt={msg.sender.name} className="w-7 h-7 rounded-full object-cover" />
                                             ) : (
                                                 <div className="w-7 h-7 rounded-full bg-violet-600 flex items-center justify-center text-xs font-bold text-white">
                                                     {msg.sender?.name?.[0]}
@@ -237,10 +261,10 @@ export default function ConversationPage() {
                                     {/* Bubble */}
                                     <div
                                         className={`relative px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${msg.isDeleted
-                                            ? "bg-white/5 text-zinc-500 italic border border-white/8"
-                                            : isMine
-                                                ? "bg-violet-600 text-white rounded-br-md"
-                                                : "bg-[#1a1a2e] text-white rounded-bl-md"
+                                                ? "bg-white/5 text-zinc-500 italic border border-white/8"
+                                                : isMine
+                                                    ? "bg-violet-600 text-white rounded-br-md"
+                                                    : "bg-[var(--bg-msg-other)] text-white rounded-bl-md"
                                             }`}
                                     >
                                         <p>{msg.isDeleted ? "This message was deleted" : msg.content}</p>
@@ -248,14 +272,15 @@ export default function ConversationPage() {
                                         {/* Action buttons */}
                                         {!msg.isDeleted && (
                                             <div
-                                                className={`absolute -top-7 ${isMine ? "right-0" : "left-0"} hidden group-hover:flex items-center gap-1 bg-[#1a1a2e] border border-white/10 rounded-lg px-1.5 py-1 shadow-xl z-10`}
+                                                className={`absolute -top-7 ${isMine ? "right-0" : "left-0"} hidden group-hover:flex items-center gap-1 bg-[var(--bg-msg-other)] border border-white/10 rounded-lg px-1.5 py-1 shadow-xl z-10`}
                                             >
                                                 <button
-                                                    onClick={() =>
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
                                                         setReactionMenuMsgId(
                                                             reactionMenuMsgId === msg._id ? null : msg._id
-                                                        )
-                                                    }
+                                                        );
+                                                    }}
                                                     className="p-1 rounded hover:bg-white/10 text-zinc-400 hover:text-white"
                                                 >
                                                     <Smile className="w-3.5 h-3.5" />
@@ -274,7 +299,8 @@ export default function ConversationPage() {
                                         {/* Reaction picker */}
                                         {reactionMenuMsgId === msg._id && (
                                             <div
-                                                className={`absolute -top-14 ${isMine ? "right-0" : "left-0"} flex items-center gap-1 bg-[#1a1a2e] border border-white/10 rounded-xl px-2 py-1.5 shadow-xl z-20`}
+                                                onClick={(e) => e.stopPropagation()}
+                                                className={`absolute -top-14 ${isMine ? "right-0" : "left-0"} flex items-center gap-1 bg-[var(--bg-msg-other)] border border-white/10 rounded-xl px-2 py-1.5 shadow-xl z-20`}
                                             >
                                                 {EMOJIS.map((emoji) => (
                                                     <button
@@ -306,9 +332,7 @@ export default function ConversationPage() {
                                             ).map(([emoji, count]) => (
                                                 <button
                                                     key={emoji}
-                                                    onClick={() =>
-                                                        toggleReaction({ messageId: msg._id, emoji })
-                                                    }
+                                                    onClick={() => toggleReaction({ messageId: msg._id, emoji })}
                                                     className="flex items-center gap-0.5 bg-white/8 hover:bg-white/15 border border-white/10 rounded-full px-2 py-0.5 text-xs text-white transition"
                                                 >
                                                     <span>{emoji}</span>
@@ -331,7 +355,7 @@ export default function ConversationPage() {
                 {/* Typing indicator */}
                 {typingUsers && typingUsers.length > 0 && (
                     <div className="flex items-center gap-2 mt-2">
-                        <div className="flex items-center gap-1 bg-[#1a1a2e] rounded-2xl px-4 py-3">
+                        <div className="flex items-center gap-1 bg-[var(--bg-msg-other)] rounded-2xl px-4 py-3">
                             <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full typing-dot" />
                             <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full typing-dot" />
                             <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full typing-dot" />
@@ -345,7 +369,7 @@ export default function ConversationPage() {
                 <div ref={bottomRef} />
             </div>
 
-            {/* New messages button */}
+            {/* ↓ New messages button */}
             {!isAtBottom && newMsgCount > 0 && (
                 <button
                     onClick={scrollToBottom}
@@ -357,13 +381,11 @@ export default function ConversationPage() {
             )}
 
             {/* Input */}
-            <div className="px-4 py-3 border-t border-white/8 bg-[#0d0d1a]">
+            <div className="px-4 py-3 border-t border-white/8 bg-[var(--bg-panel)]">
                 {sendError && (
                     <div className="mb-2 text-xs text-red-400 flex items-center justify-between bg-red-500/10 px-3 py-1.5 rounded-lg">
                         <span>{sendError}</span>
-                        <button onClick={handleSend} className="underline hover:no-underline">
-                            Retry
-                        </button>
+                        <button onClick={handleSend} className="underline hover:no-underline">Retry</button>
                     </div>
                 )}
                 <div className="flex items-end gap-2">

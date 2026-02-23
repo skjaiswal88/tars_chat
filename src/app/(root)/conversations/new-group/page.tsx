@@ -41,9 +41,9 @@ export default function NewGroupPage() {
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#070710]">
+        <div className="flex flex-col h-full bg-[var(--bg-app)]">
             {/* Header */}
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-white/8 bg-[#0d0d1a]">
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-white/8 bg-[var(--bg-panel)]">
                 <button
                     onClick={() => router.back()}
                     className="p-1.5 rounded-lg hover:bg-white/8 text-zinc-400 hover:text-white"
@@ -124,7 +124,7 @@ export default function NewGroupPage() {
             </div>
 
             {/* Create button */}
-            <div className="px-4 py-3 border-t border-white/8 bg-[#0d0d1a]">
+            <div className="px-4 py-3 border-t border-white/8 bg-[var(--bg-panel)]">
                 <button
                     onClick={handleCreate}
                     disabled={!groupName.trim() || selectedIds.size < 1 || isCreating}
