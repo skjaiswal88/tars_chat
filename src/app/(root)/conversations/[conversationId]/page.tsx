@@ -43,22 +43,16 @@ export default function ConversationPage() {
 
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    // Ref mirrors isAtBottom: avoids stale closure inside the messages useEffect
+    // Mirrors isAtBottom state — lets the messages effect read the CURRENT value
+    // without needing isAtBottom in its dependency array (avoids stale closure).
     const isAtBottomRef = useRef(true);
     const prevMsgCountRef = useRef(0);
-    const isInitialLoad = useRef(true);
+    // Tracks which conversation we last processed — used to detect initial loads
+    // without racing against convId changes in the dependency array.
+    const lastConvIdRef = useRef<string>("");
     const router = useRouter();
 
     const currentConv = conversations?.find((c) => c._id === convId);
-
-    // Reset state when switching conversations
-    useEffect(() => {
-        isInitialLoad.current = true;
-        prevMsgCountRef.current = 0;
-        setNewMsgCount(0);
-        setIsAtBottom(true);
-        isAtBottomRef.current = true;
-    }, [convId]);
 
     // Close reaction menu on outside click
     useEffect(() => {
@@ -74,26 +68,34 @@ export default function ConversationPage() {
     }, [convId, markRead]);
 
     // ─── Auto-scroll ─────────────────────────────────────────────────────────────
-    // Key fix: use isAtBottomRef (not isAtBottom state) inside this effect
-    // so we never read a stale closure value.
+    // Uses lastConvIdRef to detect when we've switched conversations.
+    // This avoids the race condition where convId in the dependency array causes
+    // this effect to run with STALE messages from the old conversation, overwriting
+    // prevMsgCountRef and breaking the "new messages" badge counter.
     useEffect(() => {
         if (messages === undefined) return;
         const count = messages.length;
 
-        if (isInitialLoad.current && count > 0) {
-            // First paint: jump instantly to bottom
-            requestAnimationFrame(() => {
-                const el = scrollContainerRef.current;
-                if (el) el.scrollTop = el.scrollHeight;
-            });
+        // Switched to a new conversation → treat as initial load
+        if (lastConvIdRef.current !== convId) {
+            lastConvIdRef.current = convId;
             prevMsgCountRef.current = count;
-            isInitialLoad.current = false;
+            isAtBottomRef.current = true;
+            setIsAtBottom(true);
+            setNewMsgCount(0);
+            if (count > 0) {
+                requestAnimationFrame(() => {
+                    const el = scrollContainerRef.current;
+                    if (el) el.scrollTop = el.scrollHeight;
+                });
+            }
             return;
         }
 
+        // Same conversation — handle new messages
         if (count > prevMsgCountRef.current) {
+            const diff = count - prevMsgCountRef.current;
             if (isAtBottomRef.current) {
-                // Smooth scroll + mark read
                 requestAnimationFrame(() => {
                     const el = scrollContainerRef.current;
                     if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
@@ -101,12 +103,11 @@ export default function ConversationPage() {
                 setNewMsgCount(0);
                 markRead({ conversationId: convId }).catch(console.error);
             } else {
-                // Badge: show how many new messages arrived while scrolled up
-                setNewMsgCount((n) => n + (count - prevMsgCountRef.current));
+                setNewMsgCount((n) => n + diff);
             }
             prevMsgCountRef.current = count;
         }
-    }, [messages, convId, markRead]);
+    }, [messages, markRead]); // intentionally no convId — lastConvIdRef handles that
 
     // ─── Scroll handler ────────────────────────────────────────────────────────
     const handleScroll = useCallback(() => {
