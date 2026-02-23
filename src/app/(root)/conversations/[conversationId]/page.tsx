@@ -151,6 +151,14 @@ export default function ConversationPage() {
             setContent("");
             if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
             setTyping({ conversationId: convId, isTyping: false }).catch(console.error);
+            // Always scroll sender to bottom and clear badge after sending
+            isAtBottomRef.current = true;
+            setIsAtBottom(true);
+            setNewMsgCount(0);
+            requestAnimationFrame(() => {
+                const el = scrollContainerRef.current;
+                if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+            });
         } catch {
             setSendError("Failed to send. Click Retry.");
         } finally {
