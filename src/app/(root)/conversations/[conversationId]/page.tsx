@@ -41,10 +41,9 @@ export default function ConversationPage() {
     const [isSending, setIsSending] = useState(false);
     const [sendError, setSendError] = useState<string | null>(null);
 
-    const bottomRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    // Ref mirrors state so scroll effect never has stale closure
+    // Ref mirrors isAtBottom: avoids stale closure inside the messages useEffect
     const isAtBottomRef = useRef(true);
     const prevMsgCountRef = useRef(0);
     const isInitialLoad = useRef(true);
@@ -52,7 +51,7 @@ export default function ConversationPage() {
 
     const currentConv = conversations?.find((c) => c._id === convId);
 
-    // Reset on conversation change
+    // Reset state when switching conversations
     useEffect(() => {
         isInitialLoad.current = true;
         prevMsgCountRef.current = 0;
@@ -74,13 +73,15 @@ export default function ConversationPage() {
         markRead({ conversationId: convId }).catch(console.error);
     }, [convId, markRead]);
 
-    // ─── Auto-scroll (reliable) ────────────────────────────────────────────────
+    // ─── Auto-scroll ─────────────────────────────────────────────────────────────
+    // Key fix: use isAtBottomRef (not isAtBottom state) inside this effect
+    // so we never read a stale closure value.
     useEffect(() => {
         if (messages === undefined) return;
         const count = messages.length;
 
         if (isInitialLoad.current && count > 0) {
-            // First load: instantly jump to bottom once DOM paints
+            // First paint: jump instantly to bottom
             requestAnimationFrame(() => {
                 const el = scrollContainerRef.current;
                 if (el) el.scrollTop = el.scrollHeight;
@@ -92,7 +93,7 @@ export default function ConversationPage() {
 
         if (count > prevMsgCountRef.current) {
             if (isAtBottomRef.current) {
-                // User is at bottom → smooth scroll + mark read
+                // Smooth scroll + mark read
                 requestAnimationFrame(() => {
                     const el = scrollContainerRef.current;
                     if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
@@ -100,7 +101,7 @@ export default function ConversationPage() {
                 setNewMsgCount(0);
                 markRead({ conversationId: convId }).catch(console.error);
             } else {
-                // User scrolled up → show badge
+                // Badge: show how many new messages arrived while scrolled up
                 setNewMsgCount((n) => n + (count - prevMsgCountRef.current));
             }
             prevMsgCountRef.current = count;
@@ -112,8 +113,8 @@ export default function ConversationPage() {
         const el = scrollContainerRef.current;
         if (!el) return;
         const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 100;
-        isAtBottomRef.current = atBottom; // update ref immediately (no re-render lag)
-        setIsAtBottom(atBottom);
+        isAtBottomRef.current = atBottom; // update ref synchronously
+        setIsAtBottom(atBottom);          // update state for re-render
         if (atBottom) {
             setNewMsgCount(0);
             markRead({ conversationId: convId }).catch(console.error);
@@ -150,7 +151,7 @@ export default function ConversationPage() {
             if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
             setTyping({ conversationId: convId, isTyping: false }).catch(console.error);
         } catch {
-            setSendError("Failed to send. Click to retry.");
+            setSendError("Failed to send. Click Retry.");
         } finally {
             setIsSending(false);
         }
@@ -174,12 +175,15 @@ export default function ConversationPage() {
 
     // ─── Render ────────────────────────────────────────────────────────────────
     return (
-        <div className="flex flex-col h-full bg-[var(--bg-app)] relative">
+        <div className="flex flex-col h-full relative" style={{ background: "var(--bg1)" }}>
             {/* Header */}
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-white/8 bg-[var(--bg-panel)]">
+            <div className="flex items-center gap-3 px-4 py-3 flex-shrink-0" style={{ borderBottom: "1px solid var(--bd)", background: "var(--bg2)" }}>
                 <button
                     onClick={() => router.back()}
-                    className="md:hidden p-1.5 rounded-lg hover:bg-white/8 text-zinc-400 hover:text-white"
+                    className="md:hidden p-1.5 rounded-lg"
+                    style={{ color: "var(--t2)" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "var(--bgh)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                 >
                     <ArrowLeft className="w-4 h-4" />
                 </button>
@@ -192,40 +196,38 @@ export default function ConversationPage() {
                         </div>
                     )}
                     {isOtherOnline && (
-                        <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[var(--bg-panel)]" />
+                        <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2" style={{ borderColor: "var(--bg2)" }} />
                     )}
                 </div>
                 <div>
-                    <p className="text-sm font-semibold text-white">{headerName}</p>
-                    <p className={`text-xs ${isOtherOnline ? "text-green-400" : "text-zinc-500"}`}>
+                    <p className="text-sm font-semibold" style={{ color: "var(--t1)" }}>{headerName}</p>
+                    <p className={`text-xs ${isOtherOnline ? "text-green-400" : ""}`} style={!isOtherOnline ? { color: "var(--t3)" } : undefined}>
                         {currentConv?.isGroup
                             ? `${(currentConv?.members as any[])?.length ?? 0} members`
-                            : isOtherOnline
-                                ? "Online"
-                                : "Offline"}
+                            : isOtherOnline ? "Online" : "Offline"}
                     </p>
                 </div>
             </div>
 
-            {/* Messages */}
+            {/* Messages — min-h-0 is CRITICAL for flex children with overflow-y-auto */}
             <div
                 ref={scrollContainerRef}
                 onScroll={handleScroll}
-                className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-1"
+                className="flex-1 min-h-0 overflow-y-auto px-4 py-4 flex flex-col gap-1"
             >
                 {messages === undefined ? (
                     <div className="flex flex-col gap-3">
                         {[...Array(6)].map((_, i) => (
                             <div key={i} className={`flex ${i % 2 === 0 ? "justify-start" : "justify-end"}`}>
-                                <div className={`rounded-2xl animate-pulse bg-white/8 h-10 ${i % 2 === 0 ? "w-48" : "w-36"}`} />
+                                <div className={`rounded-2xl animate-pulse h-10 ${i % 2 === 0 ? "w-48" : "w-36"}`} style={{ background: "var(--bgh)" }} />
                             </div>
                         ))}
                     </div>
                 ) : messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center flex-1 text-center py-20">
                         <div className="text-4xl mb-4">👋</div>
-                        <p className="text-sm font-semibold text-white">Say hello!</p>
-                        <p className="text-xs text-zinc-500 mt-1">
+                        <p className="text-sm font-semibold" style={{ color: "var(--t1)" }}>Say hello!</p>
+                        <p className="text-xs mt-1" style={{ color: "var(--t3)" }}>
                             This is the beginning of your conversation with {headerName}
                         </p>
                     </div>
@@ -251,44 +253,48 @@ export default function ConversationPage() {
                                                     {msg.sender?.name?.[0]}
                                                 </div>
                                             )
-                                        ) : (
-                                            <div className="w-7" />
-                                        )}
+                                        ) : <div className="w-7" />}
                                     </div>
                                 )}
 
                                 <div className={`group max-w-[72%] flex flex-col ${isMine ? "items-end" : "items-start"}`}>
                                     {/* Bubble */}
                                     <div
-                                        className={`relative px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${msg.isDeleted
-                                                ? "bg-white/5 text-zinc-500 italic border border-white/8"
+                                        className="relative px-4 py-2.5 rounded-2xl text-sm leading-relaxed"
+                                        style={
+                                            msg.isDeleted
+                                                ? { background: "var(--bgh)", color: "var(--t3)", border: "1px solid var(--bd)", fontStyle: "italic" }
                                                 : isMine
-                                                    ? "bg-violet-600 text-white rounded-br-md"
-                                                    : "bg-[var(--bg-msg-other)] text-white rounded-bl-md"
-                                            }`}
+                                                    ? { background: "#7c3aed", color: "#fff", borderBottomRightRadius: "4px" }
+                                                    : { background: "var(--bg3)", color: "var(--t1)", borderBottomLeftRadius: "4px" }
+                                        }
                                     >
                                         <p>{msg.isDeleted ? "This message was deleted" : msg.content}</p>
 
-                                        {/* Action buttons */}
+                                        {/* Action buttons on hover */}
                                         {!msg.isDeleted && (
                                             <div
-                                                className={`absolute -top-7 ${isMine ? "right-0" : "left-0"} hidden group-hover:flex items-center gap-1 bg-[var(--bg-msg-other)] border border-white/10 rounded-lg px-1.5 py-1 shadow-xl z-10`}
+                                                className={`absolute -top-7 ${isMine ? "right-0" : "left-0"} hidden group-hover:flex items-center gap-1 rounded-lg px-1.5 py-1 shadow-xl z-10`}
+                                                style={{ background: "var(--bg3)", border: "1px solid var(--bds)" }}
                                             >
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        setReactionMenuMsgId(
-                                                            reactionMenuMsgId === msg._id ? null : msg._id
-                                                        );
+                                                        setReactionMenuMsgId(reactionMenuMsgId === msg._id ? null : msg._id);
                                                     }}
-                                                    className="p-1 rounded hover:bg-white/10 text-zinc-400 hover:text-white"
+                                                    className="p-1 rounded"
+                                                    style={{ color: "var(--t2)" }}
+                                                    onMouseEnter={e => (e.currentTarget.style.background = "var(--bgh)")}
+                                                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                                                 >
                                                     <Smile className="w-3.5 h-3.5" />
                                                 </button>
                                                 {isMine && (
                                                     <button
                                                         onClick={() => deleteMsg({ messageId: msg._id })}
-                                                        className="p-1 rounded hover:bg-red-500/20 text-zinc-400 hover:text-red-400"
+                                                        className="p-1 rounded text-zinc-400 hover:text-red-400"
+                                                        onMouseEnter={e => (e.currentTarget.style.background = "rgba(239,68,68,0.15)")}
+                                                        onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                                                     >
                                                         <Trash2 className="w-3.5 h-3.5" />
                                                     </button>
@@ -296,11 +302,12 @@ export default function ConversationPage() {
                                             </div>
                                         )}
 
-                                        {/* Reaction picker */}
+                                        {/* Emoji reaction picker */}
                                         {reactionMenuMsgId === msg._id && (
                                             <div
                                                 onClick={(e) => e.stopPropagation()}
-                                                className={`absolute -top-14 ${isMine ? "right-0" : "left-0"} flex items-center gap-1 bg-[var(--bg-msg-other)] border border-white/10 rounded-xl px-2 py-1.5 shadow-xl z-20`}
+                                                className={`absolute -top-14 ${isMine ? "right-0" : "left-0"} flex items-center gap-1 rounded-xl px-2 py-1.5 shadow-xl z-20`}
+                                                style={{ background: "var(--bg3)", border: "1px solid var(--bds)" }}
                                             >
                                                 {EMOJIS.map((emoji) => (
                                                     <button
@@ -322,18 +329,18 @@ export default function ConversationPage() {
                                     {msg.reactions && msg.reactions.length > 0 && (
                                         <div className="flex flex-wrap gap-1 mt-1">
                                             {Object.entries(
-                                                msg.reactions.reduce(
-                                                    (acc: Record<string, number>, r: any) => {
-                                                        acc[r.emoji] = (acc[r.emoji] ?? 0) + 1;
-                                                        return acc;
-                                                    },
-                                                    {}
-                                                )
+                                                msg.reactions.reduce((acc: Record<string, number>, r: any) => {
+                                                    acc[r.emoji] = (acc[r.emoji] ?? 0) + 1;
+                                                    return acc;
+                                                }, {})
                                             ).map(([emoji, count]) => (
                                                 <button
                                                     key={emoji}
                                                     onClick={() => toggleReaction({ messageId: msg._id, emoji })}
-                                                    className="flex items-center gap-0.5 bg-white/8 hover:bg-white/15 border border-white/10 rounded-full px-2 py-0.5 text-xs text-white transition"
+                                                    className="flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs transition"
+                                                    style={{ background: "var(--bgh)", border: "1px solid var(--bd)", color: "var(--t1)" }}
+                                                    onMouseEnter={e => (e.currentTarget.style.background = "var(--bgi)")}
+                                                    onMouseLeave={e => (e.currentTarget.style.background = "var(--bgh)")}
                                                 >
                                                     <span>{emoji}</span>
                                                     <span>{String(count)}</span>
@@ -342,8 +349,7 @@ export default function ConversationPage() {
                                         </div>
                                     )}
 
-                                    {/* Timestamp */}
-                                    <span className="text-[10px] text-zinc-600 mt-1 px-1">
+                                    <span className="text-[10px] mt-1 px-1" style={{ color: "var(--t3)" }}>
                                         {formatMessageTime(msg._creationTime)}
                                     </span>
                                 </div>
@@ -355,37 +361,36 @@ export default function ConversationPage() {
                 {/* Typing indicator */}
                 {typingUsers && typingUsers.length > 0 && (
                     <div className="flex items-center gap-2 mt-2">
-                        <div className="flex items-center gap-1 bg-[var(--bg-msg-other)] rounded-2xl px-4 py-3">
+                        <div className="flex items-center gap-1 rounded-2xl px-4 py-3" style={{ background: "var(--bg3)" }}>
                             <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full typing-dot" />
                             <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full typing-dot" />
                             <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full typing-dot" />
                         </div>
-                        <span className="text-xs text-zinc-500">
+                        <span className="text-xs" style={{ color: "var(--t3)" }}>
                             {(typingUsers[0] as any)?.name?.split(" ")[0]} is typing...
                         </span>
                     </div>
                 )}
-
-                <div ref={bottomRef} />
             </div>
 
-            {/* ↓ New messages button */}
+            {/* ↓ New messages floating button */}
             {!isAtBottom && newMsgCount > 0 && (
                 <button
                     onClick={scrollToBottom}
-                    className="absolute bottom-24 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium px-4 py-2 rounded-full shadow-lg transition animate-fade-up z-10"
+                    className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-2xl transition animate-fade-up z-50"
+                    style={{ bottom: "80px" }}
                 >
                     <ArrowDown className="w-3.5 h-3.5" />
-                    {newMsgCount} new message{newMsgCount > 1 ? "s" : ""}
+                    {newMsgCount} new message{newMsgCount !== 1 ? "s" : ""}
                 </button>
             )}
 
-            {/* Input */}
-            <div className="px-4 py-3 border-t border-white/8 bg-[var(--bg-panel)]">
+            {/* Input area */}
+            <div className="px-4 py-3 flex-shrink-0" style={{ borderTop: "1px solid var(--bd)", background: "var(--bg2)" }}>
                 {sendError && (
-                    <div className="mb-2 text-xs text-red-400 flex items-center justify-between bg-red-500/10 px-3 py-1.5 rounded-lg">
+                    <div className="mb-2 flex items-center justify-between rounded-lg px-3 py-1.5 text-xs" style={{ background: "rgba(239,68,68,0.1)", color: "#f87171" }}>
                         <span>{sendError}</span>
-                        <button onClick={handleSend} className="underline hover:no-underline">Retry</button>
+                        <button onClick={handleSend} className="underline">Retry</button>
                     </div>
                 )}
                 <div className="flex items-end gap-2">
@@ -395,8 +400,13 @@ export default function ConversationPage() {
                         onKeyDown={handleKeyDown}
                         placeholder="Type a message..."
                         rows={1}
-                        className="flex-1 bg-white/6 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500/50 resize-none transition max-h-32 overflow-y-auto"
-                        style={{ lineHeight: "1.5" }}
+                        className="flex-1 rounded-2xl px-4 py-3 text-sm focus:outline-none resize-none transition max-h-32 overflow-y-auto"
+                        style={{
+                            background: "var(--bgi)",
+                            border: "1px solid var(--bd)",
+                            color: "var(--t1)",
+                            lineHeight: "1.5",
+                        }}
                     />
                     <button
                         onClick={handleSend}

@@ -4,8 +4,7 @@ import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { useParams, useRouter } from "next/navigation";
 import { MessageSquare } from "lucide-react";
-import { formatDistanceToNow, format, isToday, isThisYear } from "date-fns";
-import { Id } from "@convex/_generated/dataModel";
+import { format, isToday, isThisYear } from "date-fns";
 import { useUser } from "@clerk/nextjs";
 
 function formatLastMessageTime(timestamp: number): string {
@@ -27,10 +26,10 @@ export default function ConversationList() {
             <div className="flex flex-col gap-1 p-2">
                 {[...Array(5)].map((_, i) => (
                     <div key={i} className="flex items-center gap-3 p-3 rounded-xl">
-                        <div className="w-11 h-11 rounded-full bg-white/8 animate-pulse flex-shrink-0" />
+                        <div className="w-11 h-11 rounded-full animate-pulse flex-shrink-0" style={{ background: "var(--bgh)" }} />
                         <div className="flex-1 space-y-2">
-                            <div className="h-3 w-32 bg-white/8 rounded animate-pulse" />
-                            <div className="h-2 w-44 bg-white/6 rounded animate-pulse" />
+                            <div className="h-3 w-32 rounded animate-pulse" style={{ background: "var(--bgh)" }} />
+                            <div className="h-2 w-44 rounded animate-pulse" style={{ background: "var(--bgh)" }} />
                         </div>
                     </div>
                 ))}
@@ -41,11 +40,11 @@ export default function ConversationList() {
     if (conversations.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-                <div className="p-5 rounded-2xl bg-white/5 mb-4">
+                <div className="p-5 rounded-2xl mb-4" style={{ background: "var(--bgh)" }}>
                     <MessageSquare className="w-10 h-10 text-violet-400" />
                 </div>
-                <p className="text-sm font-semibold text-white">No conversations yet</p>
-                <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+                <p className="text-sm font-semibold" style={{ color: "var(--t1)" }}>No conversations yet</p>
+                <p className="text-xs mt-1 leading-relaxed" style={{ color: "var(--t3)" }}>
                     Click the search icon to find someone and start chatting
                 </p>
             </div>
@@ -54,7 +53,7 @@ export default function ConversationList() {
 
     return (
         <div className="flex flex-col gap-0.5 p-2">
-            <p className="px-2 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            <p className="px-2 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--t3)" }}>
                 Messages
             </p>
             {conversations.map((conv) => {
@@ -65,9 +64,7 @@ export default function ConversationList() {
                 const displayName = conv.isGroup
                     ? conv.groupName
                     : otherMembers[0]?.name ?? "Unknown";
-                const displayImage = conv.isGroup
-                    ? null
-                    : otherMembers[0]?.imageUrl;
+                const displayImage = conv.isGroup ? null : otherMembers[0]?.imageUrl;
                 const isOnline = !conv.isGroup && otherMembers[0]?.isOnline;
 
                 const lastMsgContent = conv.lastMessage
@@ -80,43 +77,39 @@ export default function ConversationList() {
                     <button
                         key={conv._id}
                         onClick={() => router.push(`/conversations/${conv._id}`)}
-                        className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left group ${isActive
-                            ? "bg-violet-600/20 border border-violet-500/30"
-                            : "hover:bg-white/5 border border-transparent"
-                            }`}
+                        className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left group ${isActive ? "bg-violet-600/20 border border-violet-500/30" : "border border-transparent"}`}
+                        style={!isActive ? { "--hover-bg": "var(--bgh)" } as any : undefined}
+                        onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "var(--bgh)"; }}
+                        onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
                     >
                         {/* Avatar */}
                         <div className="relative flex-shrink-0">
                             {displayImage ? (
-                                <img
-                                    src={displayImage}
-                                    alt={displayName ?? ""}
-                                    className="w-11 h-11 rounded-full object-cover"
-                                />
+                                <img src={displayImage} alt={displayName ?? ""} className="w-11 h-11 rounded-full object-cover" />
                             ) : (
                                 <div className="w-11 h-11 rounded-full bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center text-sm font-bold text-white">
                                     {(displayName ?? "?")[0]?.toUpperCase()}
                                 </div>
                             )}
                             {isOnline && (
-                                <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-[#0d0d1a]" />
+                                <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2" style={{ borderColor: "var(--bg2)" }} />
                             )}
                         </div>
 
                         {/* Info */}
                         <div className="flex-1 min-w-0">
                             <div className="flex items-baseline justify-between gap-1">
-                                <span className={`text-sm font-semibold truncate ${isActive ? "text-violet-300" : "text-white"}`}>
+                                <span className={`text-sm font-semibold truncate ${isActive ? "text-violet-300" : ""}`} style={!isActive ? { color: "var(--t1)" } : undefined}>
                                     {displayName}
                                 </span>
                                 {conv.lastMessageTime && (
-                                    <span className="text-[10px] text-zinc-500 flex-shrink-0">
+                                    <span className="text-[10px] flex-shrink-0" style={{ color: "var(--t3)" }}>
                                         {formatLastMessageTime(conv.lastMessageTime)}
                                     </span>
                                 )}
                             </div>
                             <div className="flex items-center justify-between gap-1 mt-0.5">
-                                <p className={`text-xs truncate max-w-[160px] ${(conv.lastMessage as any)?.isDeleted ? "text-zinc-600 italic" : "text-zinc-500"}`}>
+                                <p className={`text-xs truncate max-w-[160px] ${(conv.lastMessage as any)?.isDeleted ? "italic" : ""}`} style={{ color: "var(--t3)" }}>
                                     {lastMsgContent}
                                 </p>
                                 {conv.unreadCount > 0 && (

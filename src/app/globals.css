@@ -81,87 +81,49 @@
 }
 
 /* ======================
-   Theme CSS Variables
+   Theme CSS Custom Properties
+   Components reference these via:  text-[var(--t1)]  bg-[var(--bg1)]  etc.
    ====================== */
+
+/* Dark theme (default) */
 :root {
-  --bg-app: #070710;
-  --bg-panel: #0d0d1a;
-  --bg-msg-other: #1a1a2e;
+  --t1: #ffffff;
+  /* primary text */
+  --t2: #a1a1aa;
+  /* secondary text  */
+  --t3: #71717a;
+  /* muted text */
+  --bg1: #070710;
+  /* main app bg */
+  --bg2: #0d0d1a;
+  /* panel / sidebar */
+  --bg3: #1a1a2e;
+  /* card / received message */
+  --bgh: rgba(255, 255, 255, 0.05);
+  /* hover surface */
+  --bgi: rgba(255, 255, 255, 0.06);
+  /* input surface */
+  --bd: rgba(255, 255, 255, 0.08);
+  /* border */
+  --bds: rgba(255, 255, 255, 0.12);
+  /* stronger border */
 }
 
-:root.light {
-  --bg-app: #f4f4fc;
-  --bg-panel: #ffffff;
-  --bg-msg-other: #eeeef8;
+/* Light theme — applied by adding .light to <html> */
+.light {
+  --t1: #0d0d1a;
+  --t2: #52525b;
+  --t3: #a1a1aa;
+  --bg1: #f4f4fc;
+  --bg2: #ffffff;
+  --bg3: #e8e8f8;
+  --bgh: rgba(0, 0, 0, 0.04);
+  --bgi: rgba(0, 0, 0, 0.04);
+  --bd: rgba(0, 0, 0, 0.08);
+  --bds: rgba(0, 0, 0, 0.13);
 }
 
-/* Light mode — text overrides */
-:root.light .text-white {
-  color: #0d0d1a;
-}
 
-:root.light .text-zinc-300 {
-  color: #3f3f46;
-}
-
-:root.light .text-zinc-400 {
-  color: #52525b;
-}
-
-:root.light .text-zinc-500 {
-  color: #71717a;
-}
-
-:root.light .text-zinc-600 {
-  color: #a1a1aa;
-}
-
-:root.light .text-violet-300 {
-  color: #7c3aed;
-}
-
-:root.light .placeholder\:text-zinc-500::placeholder {
-  color: #9ca3af;
-}
-
-/* Light mode — background overrides */
-:root.light .bg-white\/5 {
-  background-color: rgba(0, 0, 0, 0.03);
-}
-
-:root.light .bg-white\/6 {
-  background-color: rgba(0, 0, 0, 0.04);
-}
-
-:root.light .bg-white\/8 {
-  background-color: rgba(0, 0, 0, 0.06);
-}
-
-:root.light .bg-white\/10 {
-  background-color: rgba(0, 0, 0, 0.07);
-}
-
-:root.light .bg-white\/15 {
-  background-color: rgba(0, 0, 0, 0.10);
-}
-
-/* Light mode — border overrides */
-:root.light .border-white\/8 {
-  border-color: rgba(0, 0, 0, 0.08);
-}
-
-:root.light .border-white\/10 {
-  border-color: rgba(0, 0, 0, 0.10);
-}
-
-:root.light .border-white\/20 {
-  border-color: rgba(0, 0, 0, 0.15);
-}
-
-/* Light mode — conversation active state */
-:root.light .bg-violet-600\/20 {
-  background-color: rgba(124, 58, 237, 0.08);
-}
 
 /* Custom animations */
 @keyframes fadeUp {
