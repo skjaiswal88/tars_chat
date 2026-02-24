@@ -2,8 +2,7 @@
 
 A real-time full-stack live chat application built with **Next.js 16**, **Convex**, **Clerk**, and **TypeScript** — submitted as the Tars Full Stack Engineer Internship Coding Challenge 2026.
 
-🌐 **Live App:** [your-vercel-url.vercel.app](https://your-vercel-url.vercel.app)  
-🎥 **Loom Video:** [Watch the 5-minute walkthrough](https://loom.com/your-link)  
+🌐 **Live App:** [tarschat-peach.vercel.app](https://tarschat-peach.vercel.app/)  
 📁 **GitHub:** [github.com/skjaiswal88/tars_chat](https://github.com/skjaiswal88/tars_chat)
 
 ---
