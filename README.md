@@ -1,6 +1,6 @@
 # TarsChat 💬
 
-A real-time full-stack live chat application built with **Next.js 16**, **Convex**, **Clerk**, and **TypeScript** — submitted as the Tars Full Stack Engineer Internship Coding Challenge 2026.
+A real-time full-stack live chat application built with **Next.js 16**, **Convex**, **Clerk**, and **TypeScript**.
 
 🌐 **Live App:** [tarschat-peach.vercel.app](https://tarschat-peach.vercel.app/)  
 📁 **GitHub:** [github.com/skjaiswal88/tars_chat](https://github.com/skjaiswal88/tars_chat)
@@ -24,8 +24,10 @@ A real-time full-stack live chat application built with **Next.js 16**, **Convex
 | 11 | Soft-delete own messages | ✅ |
 | 12 | Auto-scroll + "↓ N new messages" button | ✅ |
 | 13 | Skeleton loaders | ✅ |
-| 14 | Dark / Light theme toggle (persisted) | ✅ |
-| — | Responsive layout (mobile + desktop) | ✅ |
+| 14 | Responsive layout (mobile + desktop) | ✅ |
+| 15 | Dark / Light theme toggle (persisted) | ✅ |
+
+
 
 ---
 
@@ -157,5 +159,5 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ## Built by
 
-**Sumit Kumar Jaiswal** — [LinkedIn](https://linkedin.com/in/your-profile) · [GitHub](https://github.com/skjaiswal88)  
+**Sumit Kumar Jaiswal** — [LinkedIn](https://www.linkedin.com/in/sumit-kr-jaiswal-6b6971264/) · [GitHub](https://github.com/skjaiswal88)  
 B.Tech Computer Science, IIIT Ranchi (2022–2026)
